@@ -15,3 +15,10 @@ while readRow(x, @[9, 6, 10, 6, 7, 7, 35]):
    echo "##", val, "##"
 close(x)
 ```
+## Rationale
+awk provides two main text processing approaches: regex based field splitting, and fixed-width field splitting
+
+Nim pure library parsecsv handles non-regex (but delimited) field splitting.
+parsefixed is for fixed-width field splitting.
+
+It is line based (terminating in CR, LF, or CR LF), so does not support multi-line filed splitting.
