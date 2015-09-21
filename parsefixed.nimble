@@ -1,6 +1,6 @@
 [Package]
 name: "parsefixed"
-version: "0.1.0"
+version: "0.1.1"
 author: "James Parkinson"
 description: "parser for text files with Fixed-Width fields"
 license: "MIT"
