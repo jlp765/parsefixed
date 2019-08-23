@@ -22,4 +22,4 @@ The Nim pure library, parsecsv, handles non-regex (but delimited) field splittin
 
 parsefixed is for fixed-width field splitting.
 
-It is line based (terminating in CR, LF, or CR LF), so does not support multi-line filed splitting.
+It is line based (terminating in CR, LF, or CR LF), so does not support multi-line field splitting.
