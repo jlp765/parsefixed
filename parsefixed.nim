@@ -18,24 +18,28 @@
 ##
 ## .. code-block:: nim
 ##   import os, parsefixed, streams
-##   var s = newFileStream(paramStr(1), fmRead)
-##   if s == nil: quit("cannot open the file" & paramStr(1))
-##   var x: FwParser
-##   open(x, s, paramStr(1), @[9, 6, 10, 6, 7, 7, 35])
+##
+##   var 
+##     s = newFileStream(paramStr(1), fmRead)
+##     x: FwParser
+##
+##   if s == nil: quit("[Error] Cannot open the file: " & paramStr(1))
+##
+##   x.open(s, paramStr(1), @[9, 6, 10, 6, 7, 7, 35])
 ##   # widths: 9,6,10,... (not starting positions)
-##   while readRow(x):
+##   while x.readRow():
 ##     echo "new row: "
 ##     for val in items(x.row):
 ##       echo "##", val, "##"
-##   close(x)
+##   x.close()
 ##
 
 import
   lexbase, streams
 
 type
-  FwRow* = seq[string] ## a row in a fixed width file
-  FwParser* = object of BaseLexer ## the parser object.
+  FwRow* = seq[string]             ## a row in a fixed width file
+  FwParser* = object of BaseLexer  ## the parser object.
     row*: FwRow                    ## the current row
     filename: string
     fldWidths: seq[int]
@@ -56,9 +60,11 @@ proc error(my: FwParser, pos: int, msg: string) =
 
 proc open*(my: var FwParser, input: Stream, filename: string,
            fldWidths: openArray[int], trimTrailingSpace = false) =
-  ## initializes the parser with an input stream. `Filename` is only used
-  ## for nice error messages. The parser's behaviour can be controlled by
-  ## the parameters:
+  ## initializes the parser with an input stream.
+  ##
+  ## `Filename` is only used for nice error messages.
+  ##
+  ## The parser's behaviour can be controlled by the parameters:
   ## - `fldWidths`:
   ##   the width of chars for each field.  Chars beyond the
   ##   fldWidths are ignored.  A line is terminated by a CR,
@@ -120,7 +126,8 @@ proc processedRows*(my: var FwParser): int =
   return my.currRow
 
 proc readRow*(my: var FwParser, columns = 0): bool =
-  ## reads the next row; if `columns` > 0, it expects the row to have
+  ## reads the next row
+  ## if `columns` > 0, it expects the row to have
   ## exactly this many columns, and if not, raises `[FwError]`.
   ## Returns false if the end of the file has been encountered,
   ## else true.
@@ -164,49 +171,58 @@ proc close*(my: var FwParser) {.inline.} =
   ## closes the parser `my` and its associated input stream.
   lexbase.close(my)
 
-when not defined(testing) and isMainModule:
-  import os
+########################## Testing ################################
+when defined(testing) and isMainModule:
+  import streams
   # test data:
   #12345    Wed  1
   #11234    Thu  2
   #11123    Fri  3456  <- tests line greater than expected length
   #1        Sat  4     <- tests trimming of the first field
-  var s = newFileStream(paramStr(1), fmRead)
-  if s == nil: quit("cannot open the file" & paramStr(1))
-  var x: FwParser
+  
+  var testStr = """12345    Wed  1
+11234    Thu  2
+11123    Fri  3456
+1        Sat  4
+"""
+
+  var 
+    s = newStringStream(testStr)
+    fP: FwParser
+
   # test non-trimmed field widths
-  open(x, s, paramStr(1), @[5, 4, 3, 2, 1])
-  while readRow(x):
+  fP.open(s, "testStr", @[5, 4, 3, 2, 1])
+  while fP.readRow():
     echo "new row: "
-    for val in items(x.row):
+    for val in items(fP.row):
       echo "##", val, "##"
-  close(x)
+  fP.close()
   # test triming of trailing white space
-  s = newFileStream(paramStr(1), fmRead)
-  open(x, s, paramStr(1), @[5,4,3,2,1], true)
-  while readRow(x):
+  s = newStringStream(testStr)
+  fP.open(s, "testStr", @[5,4,3,2,1], true)
+  while fP.readRow():
     echo "new row: "
-    for val in items(x.row):
-      echo "##", val, "##"
-  close(x)
+    for val in items(fP.row):
+      echo "~~", val, "~~"
+  fP.close()
   # test no line widths requested
   # (should do nothing -> no rows returned from readRow )
-  s = newFileStream(paramStr(1), fmRead)
-  open(x, s, paramStr(1), [])
-  while readRow(x):
+  s = newStringStream(testStr)
+  fP.open(s, testStr, [])
+  while readRow(fP):
     echo "new row: "
-    for val in items(x.row):
-      echo "##", val, "##"
-  close(x)  
-  # test line shorter than expected field widths
+    for val in items(fP.row):
+      echo "!!", val, "!!"
+  fP.close()  
+  # test line shorter than efPpected field widths
   # test array rather than seq passed to open()
-  s = newFileStream(paramStr(1), fmRead)
-  open(x, s, paramStr(1), [3000,5,2])
+  s = newStringStream(testStr)
+  fP.open(s, "testStr", [3000,5,2])
   var i = 0
-  while readRow(x):  #  readRow(x,3):  # should error
+  while readRow(fP):  #  readRow(fP,3):  # should error
     echo "new row: "
-    for val in items(x.row):
-      echo "##", val, "##"
+    for val in items(fP.row):
+      echo "@@", val, "@@"
       inc(i)
   echo "Count: ",i
-  close(x)
+  fP.close()
